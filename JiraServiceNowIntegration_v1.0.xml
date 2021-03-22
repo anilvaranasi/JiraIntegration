@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8"?><unload unload_date="2021-03-22 12:13:53">
+<sys_remote_update_set action="INSERT_OR_UPDATE">
+<application display_value="Global">global</application>
+<application_name>Global</application_name>
+<application_scope>global</application_scope>
+<application_version/>
+<collisions/>
+<commit_date/>
+<deleted/>
+<description/>
+<inserted/>
+<name>Jira ServiceNow Integration v1.0</name>
+<origin_sys_id/>
+<parent display_value=""/>
+<release_date/>
+<remote_base_update_set display_value=""/>
+<remote_parent_id/>
+<remote_sys_id>d6eb36e52f832010f101ad2ef699b6f4</remote_sys_id>
+<state>loaded</state>
+<summary/>
+<sys_class_name>sys_remote_update_set</sys_class_name>
+<sys_created_by>admin</sys_created_by>
+<sys_created_on>2021-03-22 12:13:52</sys_created_on>
+<sys_id>7edeb66d2f832010f101ad2ef699b600</sys_id>
+<sys_mod_count>0</sys_mod_count>
+<sys_updated_by>admin</sys_updated_by>
+<sys_updated_on>2021-03-22 12:13:52</sys_updated_on>
+<update_set display_value=""/>
+<update_source display_value=""/>
+<updated/>
+</sys_remote_update_set>
+<sys_update_xml action="INSERT_OR_UPDATE">
+<action>INSERT_OR_UPDATE</action>
+<application display_value="Global">global</application>
+<category>customer</category>
+<comments/>
+<name>sys_ws_operation_62ead2a22f7c6010f101ad2ef699b61c</name>
+<payload>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;record_update table="sys_ws_operation"&gt;&lt;sys_ws_operation action="INSERT_OR_UPDATE"&gt;&lt;active&gt;true&lt;/active&gt;&lt;consumes&gt;application/json,application/xml,text/xml&lt;/consumes&gt;&lt;consumes_customized&gt;false&lt;/consumes_customized&gt;&lt;default_operation_uri/&gt;&lt;enforce_acl/&gt;&lt;http_method&gt;POST&lt;/http_method&gt;&lt;name&gt;CreateJiraIssue&lt;/name&gt;&lt;operation_script&gt;&lt;![CDATA[(function process( /*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+	var pathParams = request.pathParams;
+	var key = pathParams.key;
+    var keyFlag = checkKey(key);
+	if(keyFlag) {
+		 executeActionNew();
+	}
+	else {
+		var myError = new sn_ws_err.ServiceError();
+    myError.setStatus(401);
+    myError.setMessage("Access key is not valid");
+    myError.setDetail("A valid access key is required to access the resource");
+    response.setError(myError);
+	}
+	
+		function checkKey(intKey) {
+			var validKey = false;
+			jiraId = gs.getProperty('rest.integration.jirauserId');
+var grUser = new GlideRecord('sys_user');
+grUser.get(jiraId);
+var useKey= grUser.user_password;
+			if(intKey.indexOf(useKey) &gt; -1) {
+				validKey = true;
+			}
+			return validKey;
+		}
+	
+	function executeActionNew() {
+        // implement resource here
+        var sLog = '';
+        var operation = pathParams.operation; //'myApp_table' 
+        var issueId = pathParams.id; //'1234'
+
+        sLog += "\n operation=" + operation;
+        sLog += " \n id=" + issueId;
+		 sLog += " \n key=" + key;
+        var issueDetails = '';
+        issueDetails = getIssueDetails(issueId);
+        sLog += '\n IssueDetails=' + issueDetails;
+    try{
+		var issueJson = JSON.parse(issueDetails);
+       var issueSummary = issueJson.fields.summary;
+        issueDesc = issueJson.fields.description.content[0].content[0].text;
+	}catch(ex) {
+		var message = ex.message;
+		sLog += '\n exception=' + message;
+	}
+        var issueDescString = JSON.stringify(issueDesc);
+      sLog += "\n Issue id = " + issueJson.id;
+       sLog += "\n Issue description = " + issueDesc;
+ sLog += "\n issueSummary = " + issueSummary;
+
+       
+        //Get Issue details from Jira and create an incident in ServiceNow
+        if (operation.indexOf('JiraIssueCreation') &gt; -1) {
+      createIncident(issueId, issueSummary, issueDesc);
+        }
+  gs.log(sLog, 'jiraint');
+		
+	
+        function createIncident(issueId, issueSummary, issueDesc) {
+            var grInc = new GlideRecord('incident');
+            grInc.initialize();
+            grInc.short_description = issueSummary;
+            grInc.description = issueDesc;
+            grInc.correlation_id = issueId;
+            grInc.correlation_display = 'jira';
+            var incId = grInc.insert();
+			sLog += "\n Incident sys_id ="  + incId;
+        }
+
+        function getIssueDetails(issueID) {
+            try { 
+ var r = new sn_ws.RESTMessageV2('JiraIntegrationEndpoint', 'Get Issue Details');
+ r.setStringParameterNoEscape('issueID', 'SE-23');
+
+//override authentication profile 
+//authentication type ='basic'/ 'oauth2'
+//r.setAuthenticationProfile(authentication type, profile name);
+
+//set a MID server name if one wants to run the message on MID
+//r.setMIDServer('MY_MID_SERVER');
+
+//if the message is configured to communicate through ECC queue, either
+//by setting a MID server or calling executeAsync, one needs to set skip_sensor
+//to true. Otherwise, one may get an intermittent error that the response body is null
+//r.setEccParameter('skip_sensor', true);
+
+ var response = r.execute();
+ var responseBody = response.getBody();
+ var httpStatus = response.getStatusCode();
+}
+catch(ex) {
+ var message = ex.message;
+}
+            return responseBody;
+            //return JSON.stringify(request.body.data) ; //gs.log(JSON.stringify(request.body.data));
+        }
+    }
+})(request, response);]]&gt;&lt;/operation_script&gt;&lt;operation_uri&gt;/api/125590/jiraintegration/{operation}/{id}/{key}&lt;/operation_uri&gt;&lt;produces&gt;application/json,application/xml,text/xml&lt;/produces&gt;&lt;produces_customized&gt;false&lt;/produces_customized&gt;&lt;relative_path&gt;/{operation}/{id}/{key}&lt;/relative_path&gt;&lt;request_example/&gt;&lt;requires_acl_authorization&gt;false&lt;/requires_acl_authorization&gt;&lt;requires_authentication&gt;false&lt;/requires_authentication&gt;&lt;requires_snc_internal_role&gt;false&lt;/requires_snc_internal_role&gt;&lt;short_description/&gt;&lt;sys_class_name&gt;sys_ws_operation&lt;/sys_class_name&gt;&lt;sys_created_by&gt;admin&lt;/sys_created_by&gt;&lt;sys_created_on&gt;2020-12-03 15:51:24&lt;/sys_created_on&gt;&lt;sys_id&gt;62ead2a22f7c6010f101ad2ef699b61c&lt;/sys_id&gt;&lt;sys_mod_count&gt;73&lt;/sys_mod_count&gt;&lt;sys_name&gt;CreateJiraIssue&lt;/sys_name&gt;&lt;sys_package display_value="Global" source="global"&gt;global&lt;/sys_package&gt;&lt;sys_policy/&gt;&lt;sys_scope display_value="Global"&gt;global&lt;/sys_scope&gt;&lt;sys_update_name&gt;sys_ws_operation_62ead2a22f7c6010f101ad2ef699b61c&lt;/sys_update_name&gt;&lt;sys_updated_by&gt;admin&lt;/sys_updated_by&gt;&lt;sys_updated_on&gt;2021-03-22 11:59:47&lt;/sys_updated_on&gt;&lt;web_service_definition display_value="JiraIntegration"&gt;6cda52a22f7c6010f101ad2ef699b620&lt;/web_service_definition&gt;&lt;web_service_version/&gt;&lt;/sys_ws_operation&gt;&lt;/record_update&gt;</payload>
+<payload_hash>707658400</payload_hash>
+<remote_update_set display_value="Jira ServiceNow Integration v1.0">7edeb66d2f832010f101ad2ef699b600</remote_update_set>
+<replace_on_upgrade>false</replace_on_upgrade>
+<sys_created_by>admin</sys_created_by>
+<sys_created_on>2021-03-22 12:13:53</sys_created_on>
+<sys_id>32deb66d2f832010f101ad2ef699b603</sys_id>
+<sys_mod_count>0</sys_mod_count>
+<sys_recorded_at>17859ce2d760000001</sys_recorded_at>
+<sys_updated_by>admin</sys_updated_by>
+<sys_updated_on>2021-03-22 12:13:53</sys_updated_on>
+<table/>
+<target_name>CreateJiraIssue</target_name>
+<type>Scripted REST Resource</type>
+<update_domain>global</update_domain>
+<update_guid>a8ab7e2d8043201074cbaee0e4edf30c</update_guid>
+<update_guid_history>a8ab7e2d8043201074cbaee0e4edf30c:707658400,ea3bf2252d8320102609b34c313b94b3:2033960697,af7af6217f832010df564157cc9a36f8:-1909482950,123a7a6191832010299114228a06b388:1025457184,50397e2186832010943a0f107bf99d76:-1105358519,b7d87e21558320105983a90c3050bf71:-149439455,3478beed24432010c616b981cc4673dd:-1755722538,91f53aa95f43201017526a6164032e55:1200684452,cac532652c4320109b758a9fbbc8efda:1133170490,30053a29064320100645f200c468dc3a:-45834906,67a43ee5ed432010adc8e86aeea156c2:-110414271,fc04fee1ad4320105f77877cae56ceb5:-45834906,11f336e16b432010f32a5cb8b0d08c04:-1231997490,3282faa1b1432010216dcddc568f5d1e:-1259158064,5a427221494320109e05c39a16838a08:1840430066,fe3232215343201020ff783066853c13:1204698813,d0c1b6614a432010170b066b30895b20:2026330240,7ea1beed9603201080ae3f96ed61fbe8:1845548000,fbff226de903201011a8269f20d447fb:670078604,36af6e2d5303201082c44905968d4760:733598256,8a2feee94403201001be221d3e0dbf3d:-948971265,609313527f3e2010f7079a354407050a:-328037934,d237d252673620109c37f8acfed700a2:-1987529279,49a88e92a8b220108ade0cf806c2c73c:-328037934,228806925bb2201053950e6f357d8e24:-1987529279,50788292a2b2201020aae497526793c1:169179555,2ca25a0a75bea010fbb9c334737e33fd:-328037934,f252d28651bea01055fbd7a9bf6f1c9c:1710907175,93ce1271f8be20106e905ba0e871a796:506884310,f68c1e7d4e7e2010013dc657e7c83e4a:506884310,16e95ef5b77e2010d00a697823f7a612:1710907175,db769a31507e2010c27d4d0177254550:2067538938,8e56dafdc33e2010b3487d94877696f2:-1666929719,b0561631497e20104bc6847d46e1107d:1515091440,61f552fd9c3e2010973f8ca3993668f2:-1666929719,d2a552bde03e2010d31b0bcb86316e86:657401130,5a25d67d553e2010faa11ff7b6c29e5b:-1871992137,ed7492f9833e2010e753fc27f4e47500:-163744458,5aeb02f5f2fa20107d953fba8feccd97:506884310,a3bbca754dfa20105a3ce205e5d3bd89:729699954,968b02f562fa2010f1e77ca65aa3ca0f:291320379,f9ea4e35abfa2010da3aa5460c287e49:-1037212734,363a02350ffa201007707253fe6cc783:-136215538,711a02f1bafa20109f48b7f328ccc57e:-1180741167,403242b1c0ba2010b2213db1d1f19fd6:-2024660843,97c106b1bbba2010c814ad4c121eb7ae:-359588951,ce91ce7137ba2010fabdbce7d233f5bc:981952089,f18142b1e2ba201030655bd39e919ecf:-1303716263,99710e71acba20103c03d66cdf32e339:-216745884,3a5102b9d67a20108a09f485183ad869:981952089,99410ab98e7a201050c49a74c3d745d2:-1825479007,eb0102b9fd7a201088cb4095b7d1407f:-76142132,da100ab9ef7a2010b22cfa05353ec1f0:151902542,a4ddf5b9c87a201058fbfbf49679e19f:1606332025,8e9d31f1ca7a20101a3b398eb33364d0:-79464935,3ffa35b1b17a201098895b477389761c:227673459,62da3135c07a20100868fc1dd794b53d:421350675,f79abdf1f37a20101d435581b84e93a0:-425557932,7bc93931ad7a20108d494c8be4a3a683:1106348962,ebb9f1713a7a2010b6175ae0640c3233:-1264545950,76f8f1fd5e3a20102a766cf17a33ccd7:-408436944,4758f1fd5c3a20105ca94b3e8c434290:-117850999,3d38bdbdd83a2010294a49e65eaa9378:-829750818,829be175dbf62010d1e463d6575e933f:-1126139201,0fa9257183f620109b1325e4f04c5594:1344676956,c3072df905b620108645e2b0c967817e:1066104085,b2d62d79afb6201009c4b98b5c694498:-1027151693,db8621b912b620104214e7c212a898f8:194289217,c85621b980b620104914fb758b0358f4:-1816016171,a63661b9f1b62010d6d39c92c99b4818:1223782198,910621b19536201031f4949050ab4c4a:1121820270,6ee529f5fab620100c541f0b6d863d89:-496931161,ebb521799bb62010519c14d2446e53d0:-1047045077,62f46175bbb620101339080f8bdd514d:-1234911837,90b4adb5ebb620108972895934a95847:1502881040,2bd199f195322010a1b2147e6573e9ae:424884526,565bd6aed23c60102934e851e727763c:-250167353</update_guid_history>
+<update_set display_value=""/>
+<view/>
+</sys_update_xml>
+<sys_update_xml action="INSERT_OR_UPDATE">
+<action>INSERT_OR_UPDATE</action>
+<application display_value="Global">global</application>
+<category>customer</category>
+<comments/>
+<name>sys_rest_message_fn_3638e5b92fb62010f101ad2ef699b6a1</name>
+<payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_rest_message_fn"><sys_rest_message_fn action="INSERT_OR_UPDATE"><authentication_type>inherit_from_parent</authentication_type><basic_auth_password/><basic_auth_profile/><basic_auth_user/><content/><function_name>Get Issue Details</function_name><http_method>get</http_method><lock>false</lock><oauth2_profile/><protocol_name/><qualified_name>JiraIntegrationEndpoint [ Get Issue Details ]</qualified_name><rest_endpoint>https://questwiproservicenow.atlassian.net/rest/api/3/issue/${issueID}</rest_endpoint><rest_message display_value="JiraIntegrationEndpoint">3e1e7234dbd86810bd8964d748961977</rest_message><sys_class_name>sys_rest_message_fn</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2021-03-10 14:18:11</sys_created_on><sys_id>3638e5b92fb62010f101ad2ef699b6a1</sys_id><sys_mod_count>4</sys_mod_count><sys_name>Get Issue Details</sys_name><sys_package display_value="Global" source="global">global</sys_package><sys_policy/><sys_scope display_value="Global">global</sys_scope><sys_update_name>sys_rest_message_fn_3638e5b92fb62010f101ad2ef699b6a1</sys_update_name><sys_updated_by>admin</sys_updated_by><sys_updated_on>2021-03-10 17:51:36</sys_updated_on><use_basic_auth>false</use_basic_auth><use_mid_server/><use_mutual_auth>false</use_mutual_auth></sys_rest_message_fn></record_update>]]></payload>
+<payload_hash>445021547</payload_hash>
+<remote_update_set display_value="Jira ServiceNow Integration v1.0">7edeb66d2f832010f101ad2ef699b600</remote_update_set>
+<replace_on_upgrade>false</replace_on_upgrade>
+<sys_created_by>admin</sys_created_by>
+<sys_created_on>2021-03-22 12:13:53</sys_created_on>
+<sys_id>36deb66d2f832010f101ad2ef699b602</sys_id>
+<sys_mod_count>0</sys_mod_count>
+<sys_recorded_at>1781d43f46f0000001</sys_recorded_at>
+<sys_updated_by>admin</sys_updated_by>
+<sys_updated_on>2021-03-22 12:13:53</sys_updated_on>
+<table/>
+<target_name>Get Issue Details</target_name>
+<type>HTTP Method</type>
+<update_domain>global</update_domain>
+<update_guid>341916b5b27e2010f529f039b4a800d1</update_guid>
+<update_guid_history>341916b5b27e2010f529f039b4a800d1:445021547,5b09d2b5de7e20108f3c2fec0379bac0:-1279986059,26a8a1fdefb62010ffd75aab677a1b78:-410098027,0058a5bd3ab620105d2c8b7270450cc3:-48046275,fe38e5b99bb62010f0a0d23d6fcff6a3:762339</update_guid_history>
+<update_set display_value=""/>
+<view/>
+</sys_update_xml>
+<sys_update_xml action="INSERT_OR_UPDATE">
+<action>INSERT_OR_UPDATE</action>
+<application display_value="Global">global</application>
+<category>customer</category>
+<comments/>
+<name>sys_rest_message_3e1e7234dbd86810bd8964d748961977</name>
+<payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_rest_message"><sys_rest_message action="INSERT_OR_UPDATE"><access>package_private</access><authentication_type>basic</authentication_type><basic_auth_password/><basic_auth_profile display_value="JiraIntegration">132e7634dbd86810bd8964d74896193a</basic_auth_profile><basic_auth_user/><description/><name>JiraIntegrationEndpoint</name><oauth2_profile/><protocol_name/><rest_endpoint>https://questwiproservicenow.atlassian.net/rest/api/2/search?jql=project=SI</rest_endpoint><sys_class_name>sys_rest_message</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2020-11-03 11:22:41</sys_created_on><sys_id>3e1e7234dbd86810bd8964d748961977</sys_id><sys_mod_count>2</sys_mod_count><sys_name>JiraIntegrationEndpoint</sys_name><sys_package display_value="Global" source="global">global</sys_package><sys_policy/><sys_scope display_value="Global">global</sys_scope><sys_update_name>sys_rest_message_3e1e7234dbd86810bd8964d748961977</sys_update_name><sys_updated_by>admin</sys_updated_by><sys_updated_on>2021-03-10 17:50:53</sys_updated_on><use_basic_auth>false</use_basic_auth><use_mutual_auth>false</use_mutual_auth></sys_rest_message></record_update>]]></payload>
+<payload_hash>-758038491</payload_hash>
+<remote_update_set display_value="Jira ServiceNow Integration v1.0">7edeb66d2f832010f101ad2ef699b600</remote_update_set>
+<replace_on_upgrade>false</replace_on_upgrade>
+<sys_created_by>admin</sys_created_by>
+<sys_created_on>2021-03-22 12:13:53</sys_created_on>
+<sys_id>72deb66d2f832010f101ad2ef699b602</sys_id>
+<sys_mod_count>0</sys_mod_count>
+<sys_recorded_at>1781d4350b00000001</sys_recorded_at>
+<sys_updated_by>admin</sys_updated_by>
+<sys_updated_on>2021-03-22 12:13:53</sys_updated_on>
+<table/>
+<target_name>JiraIntegrationEndpoint</target_name>
+<type>REST Message</type>
+<update_domain>global</update_domain>
+<update_guid>a6e85275527e2010cad97cb9090b7491</update_guid>
+<update_guid_history>a6e85275527e2010cad97cb9090b7491:-758038491,e76e3634eed868100a35e33f57c07c85:214882255,652efef020d868109dda6e24eca1d158:2023020722</update_guid_history>
+<update_set display_value=""/>
+<view/>
+</sys_update_xml>
+<sys_update_xml action="INSERT_OR_UPDATE">
+<action>INSERT_OR_UPDATE</action>
+<application display_value="Global">global</application>
+<category>customer</category>
+<comments/>
+<name>sys_properties_74077e2d2f432010f101ad2ef699b641</name>
+<payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_properties"><sys_properties action="INSERT_OR_UPDATE"><choices/><description/><ignore_cache>false</ignore_cache><is_private>false</is_private><name>rest.integration.jirauserId</name><read_roles/><suffix/><sys_class_name>sys_properties</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2021-03-22 11:40:39</sys_created_on><sys_id>74077e2d2f432010f101ad2ef699b641</sys_id><sys_mod_count>0</sys_mod_count><sys_name>rest.integration.jirauserId</sys_name><sys_package display_value="Global" source="global">global</sys_package><sys_policy/><sys_scope display_value="Global">global</sys_scope><sys_update_name>sys_properties_74077e2d2f432010f101ad2ef699b641</sys_update_name><sys_updated_by>admin</sys_updated_by><sys_updated_on>2021-03-22 11:40:39</sys_updated_on><type>string</type><value>3f2632e92f432010f101ad2ef699b6b6</value><write_roles/></sys_properties><sys_translated_text action="delete_multiple" query="documentkey=74077e2d2f432010f101ad2ef699b641"/></record_update>]]></payload>
+<payload_hash>450093730</payload_hash>
+<remote_update_set display_value="Jira ServiceNow Integration v1.0">7edeb66d2f832010f101ad2ef699b600</remote_update_set>
+<replace_on_upgrade>false</replace_on_upgrade>
+<sys_created_by>admin</sys_created_by>
+<sys_created_on>2021-03-22 12:13:52</sys_created_on>
+<sys_id>76deb66d2f832010f101ad2ef699b601</sys_id>
+<sys_mod_count>0</sys_mod_count>
+<sys_recorded_at>17859bcb38a0000001</sys_recorded_at>
+<sys_updated_by>admin</sys_updated_by>
+<sys_updated_on>2021-03-22 12:13:52</sys_updated_on>
+<table/>
+<target_name>rest.integration.jirauserId</target_name>
+<type>System Property</type>
+<update_domain>global</update_domain>
+<update_guid>3c477ee9ab432010b7c9ce54c895a380</update_guid>
+<update_guid_history>3c477ee9ab432010b7c9ce54c895a380:450093730</update_guid_history>
+<update_set display_value=""/>
+<view/>
+</sys_update_xml>
+<sys_update_xml action="INSERT_OR_UPDATE">
+<action>INSERT_OR_UPDATE</action>
+<application display_value="Global">global</application>
+<category>customer</category>
+<comments/>
+<name>sys_ws_definition_6cda52a22f7c6010f101ad2ef699b620</name>
+<payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ws_definition"><sys_ws_definition action="INSERT_OR_UPDATE"><active>true</active><base_uri>/api/125590/jiraintegration</base_uri><consumes>application/json,application/xml,text/xml</consumes><consumes_customized>false</consumes_customized><default_version>No active default version</default_version><doc_link/><enforce_acl/><is_versioned>false</is_versioned><name>JiraIntegration</name><namespace>125590</namespace><produces>application/json,application/xml,text/xml</produces><produces_customized>false</produces_customized><service_id>jiraintegration</service_id><short_description/><sys_class_name>sys_ws_definition</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2020-12-03 15:49:18</sys_created_on><sys_id>6cda52a22f7c6010f101ad2ef699b620</sys_id><sys_mod_count>5</sys_mod_count><sys_name>JiraIntegration</sys_name><sys_package display_value="Global" source="global">global</sys_package><sys_policy/><sys_scope display_value="Global">global</sys_scope><sys_update_name>sys_ws_definition_6cda52a22f7c6010f101ad2ef699b620</sys_update_name><sys_updated_by>admin</sys_updated_by><sys_updated_on>2021-03-10 18:01:08</sys_updated_on></sys_ws_definition></record_update>]]></payload>
+<payload_hash>-86627556</payload_hash>
+<remote_update_set display_value="Jira ServiceNow Integration v1.0">7edeb66d2f832010f101ad2ef699b600</remote_update_set>
+<replace_on_upgrade>false</replace_on_upgrade>
+<sys_created_by>admin</sys_created_by>
+<sys_created_on>2021-03-22 12:13:53</sys_created_on>
+<sys_id>7edeb66d2f832010f101ad2ef699b602</sys_id>
+<sys_mod_count>0</sys_mod_count>
+<sys_recorded_at>178212891100000000</sys_recorded_at>
+<sys_updated_by>admin</sys_updated_by>
+<sys_updated_on>2021-03-22 12:13:53</sys_updated_on>
+<table/>
+<target_name>JiraIntegration</target_name>
+<type>Scripted REST API</type>
+<update_domain>global</update_domain>
+<update_guid>3e32d2867dbea010e0502f19e8146545</update_guid>
+<update_guid_history>3e32d2867dbea010e0502f19e8146545:-86627556,0eec56bd397e20109bfa89e97e67bd54:-1112375346,ac4b1eb9327e201001f84c047219fba9:-86627556,433b5eb9f97e20104b2e2a196707a81a:74106067,392b1eb9fc7e2010ab8e24a502d39086:-86627556,2946d2fd123e20104539751550db4b50:-1112375346,5046d231697e201095971701b3cefdbf:1018741623,a3da92a26d7c6010b983d653e990a00b:-1112375346</update_guid_history>
+<update_set display_value=""/>
+<view/>
+</sys_update_xml>
+<sys_update_xml action="INSERT_OR_UPDATE">
+<action>INSERT_OR_UPDATE</action>
+<application display_value="Global">global</application>
+<category>customer</category>
+<comments/>
+<name>sys_user_3f2632e92f432010f101ad2ef699b6b6</name>
+<payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update sys_domain="09ff3d105f231000b12e3572f2b4775d" table="sys_user"><sys_user action="INSERT_OR_UPDATE"><accumulated_roles/><active>true</active><agent_status/><avatar/><building/><calendar_integration>1</calendar_integration><city/><company display_value="Gabtype">24f2e62151841010f87742203d84d1b0</company><correlation_id/><cost_center/><country/><date_format/><default_perspective/><department/><edu_status>faculty</edu_status><email/><employee_number/><enable_multifactor_authn>false</enable_multifactor_authn><failed_attempts/><first_name>jira</first_name><gender/><geolocation_tracked>false</geolocation_tracked><home_phone/><hr_integration_source/><internal_integration_user>false</internal_integration_user><introduction/><last_login/><last_login_device/><last_login_time/><last_name>Api</last_name><last_password/><last_position_update/><latitude/><ldap_server/><location/><locked_out>false</locked_out><longitude/><managed_domain>false</managed_domain><manager/><middle_name/><mobile_phone/><name>jira Api</name><notification>2</notification><on_schedule/><password_needs_reset>false</password_needs_reset><phone/><photo/><preferred_language/><roles/><schedule/><source/><sso_source/><state/><street/><sys_class_name>sys_user</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2021-03-22 11:36:19</sys_created_on><sys_domain>09ff3d105f231000b12e3572f2b4775d</sys_domain><sys_domain_path>!!!/!!!/</sys_domain_path><sys_id>3f2632e92f432010f101ad2ef699b6b6</sys_id><sys_mod_count>0</sys_mod_count><sys_updated_by>admin</sys_updated_by><sys_updated_on>2021-03-22 11:36:19</sys_updated_on><time_format/><time_sheet_policy/><time_zone/><title/><transaction_log/><user_name>jiraapi</user_name><user_password>$s$U99SvePiX0Rkbh2bYUHR0odW1XFig6Y068EbkvGTfow=$tOFxzT+V012h5FQPcaZuxfo6K2HF6vrRbeJ+2Njbn2o=</user_password><vip>false</vip><web_service_access_only>false</web_service_access_only><zip/></sys_user></record_update>]]></payload>
+<payload_hash>-1469936524</payload_hash>
+<remote_update_set display_value="Jira ServiceNow Integration v1.0">7edeb66d2f832010f101ad2ef699b600</remote_update_set>
+<replace_on_upgrade>false</replace_on_upgrade>
+<sys_created_by>admin</sys_created_by>
+<sys_created_on>2021-03-22 12:13:53</sys_created_on>
+<sys_id>badeb66d2f832010f101ad2ef699b602</sys_id>
+<sys_mod_count>0</sys_mod_count>
+<sys_recorded_at>17859d9deb10000001</sys_recorded_at>
+<sys_updated_by>admin</sys_updated_by>
+<sys_updated_on>2021-03-22 12:13:53</sys_updated_on>
+<table/>
+<target_name>jira Api</target_name>
+<type>User</type>
+<update_domain>09ff3d105f231000b12e3572f2b4775d</update_domain>
+<update_guid>6f8ef62d8a832010adb5c3b3bcf534cc</update_guid>
+<update_guid_history>6f8ef62d8a832010adb5c3b3bcf534cc:-1469936524</update_guid_history>
+<update_set display_value=""/>
+<view/>
+</sys_update_xml>
+<sys_update_xml action="INSERT_OR_UPDATE">
+<action>INSERT_OR_UPDATE</action>
+<application display_value="Global">global</application>
+<category>customer</category>
+<comments/>
+<name>sys_rest_message_fn_parameters_23a8e1fd2fb62010f101ad2ef699b67e</name>
+<payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_rest_message_fn_parameters"><sys_rest_message_fn_parameters action="INSERT_OR_UPDATE"><name>issueID</name><rest_message_function display_value="Get Issue Details">3638e5b92fb62010f101ad2ef699b6a1</rest_message_function><sys_class_name>sys_rest_message_fn_parameters</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2021-03-10 14:20:10</sys_created_on><sys_id>23a8e1fd2fb62010f101ad2ef699b67e</sys_id><sys_mod_count>3</sys_mod_count><sys_name>issueID</sys_name><sys_package display_value="Global" source="global">global</sys_package><sys_policy/><sys_scope display_value="Global">global</sys_scope><sys_update_name>sys_rest_message_fn_parameters_23a8e1fd2fb62010f101ad2ef699b67e</sys_update_name><sys_updated_by>admin</sys_updated_by><sys_updated_on>2021-03-22 12:10:47</sys_updated_on><type>string</type><value>SE-23</value></sys_rest_message_fn_parameters></record_update>]]></payload>
+<payload_hash>1490140952</payload_hash>
+<remote_update_set display_value="Jira ServiceNow Integration v1.0">7edeb66d2f832010f101ad2ef699b600</remote_update_set>
+<replace_on_upgrade>false</replace_on_upgrade>
+<sys_created_by>admin</sys_created_by>
+<sys_created_on>2021-03-22 12:13:53</sys_created_on>
+<sys_id>f6deb66d2f832010f101ad2ef699b602</sys_id>
+<sys_mod_count>0</sys_mod_count>
+<sys_recorded_at>17859d840570000001</sys_recorded_at>
+<sys_updated_by>admin</sys_updated_by>
+<sys_updated_on>2021-03-22 12:13:53</sys_updated_on>
+<table/>
+<target_name>issueID</target_name>
+<type>Variable Substitutions</type>
+<update_domain>global</update_domain>
+<update_guid>e92e3ea954832010226333c202df244a</update_guid>
+<update_guid_history>e92e3ea954832010226333c202df244a:1490140952,3e1e762d248320103b038bbe18f63eac:-440478153,e7b865fd3bb62010939eeeabe3c4c96f:1490140952,33a8e1fd1cb620100e49dff3e96a9680:-681810681</update_guid_history>
+<update_set display_value=""/>
+<view/>
+</sys_update_xml>
+</unload>
